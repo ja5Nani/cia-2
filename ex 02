@@ -1,0 +1,72 @@
+cultural algorithm for travelsalesman problem:
+its is implemented in python
+
+import random
+
+# Define the problem parameters
+num_cities = 10
+city_coords = [(random.uniform(-100, 100), random.uniform(-100, 100)) for _ in range(num_cities)]
+
+# Define the cultural algorithm parameters
+num_iterations = 1000
+pop_size = 50
+elite_size = 10
+mutation_rate = 0.05
+learning_rate = 0.1
+
+# Define the fitness function
+def fitness(route):
+    # Calculate the total distance of the route
+    dist = 0
+    for i in range(num_cities-1):
+        dist += ((city_coords[route[i]][0] - city_coords[route[i+1]][0])**2 
+                + (city_coords[route[i]][1] - city_coords[route[i+1]][1])*2)*0.5
+    dist += ((city_coords[route[num_cities-1]][0] - city_coords[route[0]][0])**2 
+            + (city_coords[route[num_cities-1]][1] - city_coords[route[0]][1])*2)*0.5
+    return 1/dist
+
+# Define the cultural algorithm
+def cultural_algorithm():
+    # Initialize the population with random routes
+    population = [list(range(num_cities)) for _ in range(pop_size)]
+    for i in range(pop_size):
+        random.shuffle(population[i])
+    
+    # Iterate for a fixed number of generations
+    for generation in range(num_iterations):
+        # Evaluate the fitness of each individual in the population
+        fitness_values = [fitness(route) for route in population]
+        
+        # Sort the population by fitness
+        population = [x for _, x in sorted(zip(fitness_values, population), reverse=True)]
+        
+        # Extract the elite individuals
+        elite = population[:elite_size]
+        
+        # Update the cultural knowledge
+        for i in range(elite_size):
+            for j in range(num_cities):
+                if elite[i][j] not in population[elite_size:]:
+                    population[elite_size+i][j] = elite[i][j]
+        
+        # Apply mutation to the remaining individuals
+        for i in range(elite_size, pop_size):
+            for j in range(num_cities):
+                if random.random() < mutation_rate:
+                    # Swap the current city with a randomly selected one
+                    k = random.randint(0, num_cities-1)
+                    population[i][j], population[i][k] = population[i][k], population[i][j]
+        
+        # Apply cultural learning to the remaining individuals
+        for i in range(elite_size, pop_size):
+            for j in range(num_cities-1):
+                if random.random() < learning_rate:
+                    # Swap the current city with the most common one in the elite group
+                    common_city = max(set([elite[k][j] for k in range(elite_size)]), key=[elite[k][j] for k in range(elite_size)].count)
+                    k = population[i].index(common_city)
+                    population[i][j], population[i][k] = population[i][k], population[i][j]
+    
+    # Return the best route and its fitness
+    best_route = population[0]
+    best_fitness = fitness(best_route)
+    return best_route, best_fitness
